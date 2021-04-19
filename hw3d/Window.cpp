@@ -132,6 +132,64 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 		kbd.OnChar(static_cast<char>(wParam));
 		break;
 	//***********************END KEYBOARD MESSAGES***************************
+
+	//***************************MOUSE MESSAGES***************************
+	case WM_MOUSEMOVE:
+		const POINTS p = MAKEPOINTS(lParam);
+		if (p.x >= 0 && p.x < width && p.y >= 0 && p.y < height)
+		{
+			mouse.OnMove(p.x, p.y);
+			if (!mouse.IsInWindow())
+			{
+				SetCapture(hWnd);
+				mouse.OnEnter();
+			}
+		}
+		else
+		{
+			if (mouse.IsLeftPressed() || mouse.IsRightPressed() || mouse.IsMiddlePressed())
+			{
+				mouse.OnMove(p.x, p.y);
+			}
+			else
+			{
+				ReleaseCapture();
+				mouse.OnLeave();
+			}
+		}
+		break;
+	case WM_LBUTTONDOWN:
+		mouse.OnLeftPressed();
+		break;
+	case WM_LBUTTONUP:
+		mouse.OnLeftReleased();
+		break;
+	case WM_MBUTTONDOWN:
+		mouse.OnMiddlePressed();
+		break;
+	case WM_MBUTTONUP:
+		mouse.OnMiddleReleased();
+		break;
+	case WM_RBUTTONDOWN:
+		mouse.OnRightPressed();
+		break;
+	case WM_RBUTTONUP:
+		mouse.OnRightReleased();
+		break;
+	case WM_MOUSEWHEEL:
+		auto wd = GET_WHEEL_DELTA_WPARAM(wParam);
+		while (wd >= WHEEL_DELTA)
+		{
+			wd -= WHEEL_DELTA;
+			mouse.OnWheelUp();
+		}
+		while (wd <= -WHEEL_DELTA)
+		{
+			wd += WHEEL_DELTA;
+			mouse.OnWheelDown();
+		}
+		break;
+	//***********************END MOUSE MESSAGES***************************
 	}
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
