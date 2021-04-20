@@ -1,5 +1,8 @@
 #include "Window.h"
 #include "Utilities.h"
+#include "App.h"
+
+#pragma comment(lib, "XInput9_1_0")
 
 int WINAPI wWinMain(
 	_In_		HINSTANCE	hInstance,
@@ -9,22 +12,9 @@ int WINAPI wWinMain(
 {
 	try
 	{
-		Window wnd(800, 600, L"D3D11 Engine");
+		App app;
 
-		MSG msg;
-		BOOL gResult;
-
-		while ((gResult = GetMessage(&msg, nullptr, 0, 0)) > 0)
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-		if (gResult == -1)
-		{
-			return -1;
-		}
-
-		return msg.wParam;
+		return app.Go();
 	}
 	catch (const ChiliException& e)
 	{
