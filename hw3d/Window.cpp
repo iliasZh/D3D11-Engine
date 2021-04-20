@@ -69,6 +69,8 @@ Window::Window(int width, int height, const wchar_t* name)
 	}
 
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
+
+	pGfx = std::make_unique<Graphics>(hWnd);
 }
 
 Window::~Window()
@@ -100,6 +102,11 @@ std::optional<int> Window::ProcessMessages()
 	}
 
 	return std::optional<int>{};
+}
+
+Graphics& Window::gfx()
+{
+	return *pGfx;
 }
 
 LRESULT CALLBACK Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)

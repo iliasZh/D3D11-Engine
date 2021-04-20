@@ -2,10 +2,12 @@
 
 #include "ChiliWin.h"
 #include "ChiliException.h"
+#include "Graphics.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "Controller.h"
 #include <optional>
+#include <memory>
 
 class Window
 {
@@ -45,6 +47,7 @@ public:
 	Window& operator=(const Window&) = delete;
 	void SetTitle(const std::wstring& title) const;
 	static std::optional<int> ProcessMessages();
+	Graphics& gfx();
 private:
 	static LRESULT CALLBACK HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -57,6 +60,7 @@ private:
 	HWND hWnd;
 	int width;
 	int height;
+	std::unique_ptr<Graphics> pGfx;
 };
 
 #define WIDE2(x) L##x

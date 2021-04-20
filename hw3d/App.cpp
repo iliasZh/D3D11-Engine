@@ -18,5 +18,5 @@ int App::Go()
 
 void App::DoFrame()
 {
-
+    wnd.gfx().EndFrame();
 }
