@@ -11,6 +11,4 @@ private:
 	void DoFrame();
 private:
 	Window wnd;
-	std::wstringstream wss;
-
 };
