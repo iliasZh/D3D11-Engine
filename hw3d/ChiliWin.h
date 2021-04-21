@@ -47,3 +47,7 @@
 #define STRICT
 
 #include <Windows.h>
+
+#define WIDE2(x) L##x
+#define WIDE1(x) WIDE2(x)
+#define WFILE WIDE1(__FILE__)

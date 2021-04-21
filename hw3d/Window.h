@@ -15,14 +15,25 @@ public:
 	class Exception : public ChiliException
 	{
 	public:
-		Exception(int line, const wchar_t* file, HRESULT hr) noexcept;
+		using ChiliException::ChiliException;
+		static std::wstring TranslateErrorCode(HRESULT hr) noexcept;
+	};
+	class HRESULTException : public Exception
+	{
+	public:
+		HRESULTException(int line, const wchar_t* file, HRESULT hr) noexcept;
 		const wchar_t* What() const noexcept override;
 		const wchar_t* GetType() const noexcept override;
-		static std::wstring TranslateErrorCode(HRESULT hr) noexcept;
 		HRESULT GetErrorCode() const noexcept;
 		std::wstring GetErrorString() const noexcept;
 	private:
 		HRESULT hr; 
+	};
+	class NoGraphicsException : public Exception
+	{
+	public:
+		using Exception::Exception;
+		const wchar_t* GetType() const noexcept override;
 	};
 private:
 	class WindowClass
@@ -63,9 +74,6 @@ private:
 	std::unique_ptr<Graphics> pGfx;
 };
 
-#define WIDE2(x) L##x
-#define WIDE1(x) WIDE2(x)
-#define WFILE WIDE1(__FILE__)
-
-#define CHWND_EXCEPT(hr) Window::Exception( __LINE__, WFILE, hr)
-#define CHWND_LAST_EXCEPT() Window::Exception( __LINE__, WFILE, GetLastError())
+#define CHWND_EXCEPT(hr) Window::HRESULTException{ __LINE__, WFILE, (hr) }
+#define CHWND_LAST_EXCEPT() Window::HRESULTException{ __LINE__, WFILE, HRESULT_FROM_WIN32(GetLastError())}
+#define CHWND_NO_GFX_EXCEPT() Window::NoGraphicsException{ __LINE__, WFILE }

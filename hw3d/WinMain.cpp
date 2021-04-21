@@ -18,15 +18,18 @@ int WINAPI wWinMain(
 	}
 	catch (const ChiliException& e)
 	{
-		MessageBox(nullptr, e.What(), e.GetType(), MB_OK | MB_ICONEXCLAMATION);
+		SetWindowLongPtr(GetActiveWindow(), GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&DefWindowProc));
+		MessageBox(nullptr, e.What(), e.GetType(), MB_OK | MB_ICONERROR);
 	}
 	catch (const std::exception& e)
 	{
-		MessageBox(nullptr, to_ws(e.what()).c_str(), L"Standard exception", MB_OK | MB_ICONEXCLAMATION);
+		SetWindowLongPtr(GetActiveWindow(), GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&DefWindowProc));
+		MessageBox(nullptr, to_ws(e.what()).c_str(), L"Standard exception", MB_OK | MB_ICONERROR);
 	}
 	catch (...)
 	{
-		MessageBox(nullptr, L"No details available", L"Unknown exception", MB_OK | MB_ICONEXCLAMATION);
+		SetWindowLongPtr(GetActiveWindow(), GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&DefWindowProc));
+		MessageBox(nullptr, L"No details available", L"Unknown exception", MB_OK | MB_ICONERROR);
 	}
 	return -1;
 }

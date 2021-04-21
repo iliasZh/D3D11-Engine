@@ -2,6 +2,59 @@
 
 #pragma comment(lib, "d3d11.lib")
 
+// window exception stuff
+Graphics::Exception::Exception(int line, const wchar_t* file, HRESULT hr) noexcept
+	: ChiliException{ line, file }
+	, hr{ hr }
+{}
+
+const wchar_t* Graphics::Exception::What() const noexcept
+{
+	std::wstringstream oss;
+	oss << GetType() << std::endl
+		<< L"[Error code]: " << std::hex << std::showbase << GetErrorCode() << std::endl
+		<< L"[Description]: " << GetErrorString() << std::endl
+		<< GetOriginString();
+	whatBuffer = oss.str();
+	return whatBuffer.c_str();
+}
+
+const wchar_t* Graphics::Exception::GetType() const noexcept
+{
+	return L"Chili Graphics Exception";
+}
+
+std::wstring Graphics::Exception::TranslateErrorCode(HRESULT hr) noexcept
+{
+	wchar_t* pMsgBuf = nullptr;
+	DWORD nMsgLen = FormatMessage
+	(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		reinterpret_cast<LPWSTR>(&pMsgBuf), 0, nullptr
+	);
+	if (nMsgLen == 0)
+	{
+		return L"Unidentified error code";
+	}
+	std::wstring errorString = pMsgBuf;
+	LocalFree(pMsgBuf);
+	return errorString;
+}
+
+HRESULT Graphics::Exception::GetErrorCode() const noexcept
+{
+	return hr;
+}
+
+std::wstring Graphics::Exception::GetErrorString() const noexcept
+{
+	return TranslateErrorCode(hr);
+}
+
+
+
 Graphics::Graphics(HWND hWnd)
 {
 	DXGI_SWAP_CHAIN_DESC sd = {};
@@ -28,17 +81,20 @@ Graphics::Graphics(HWND hWnd)
 	// 1 frontbuffer, 1 backbuffer
 	sd.BufferCount = 1;
 
-	sd.OutputWindow = hWnd;
+	sd.OutputWindow = /*hWnd*/ (HWND)696969;
 	sd.Windowed = TRUE;
 	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	sd.Flags = 0;
 
-	D3D11CreateDeviceAndSwapChain
+	// for exception throwing, do NOT rename
+	HRESULT hr;
+
+	GFX_THROW_IF_FAILED(D3D11CreateDeviceAndSwapChain
 	(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
-		0,
+		D3D11_CREATE_DEVICE_DEBUG,
 		nullptr,
 		0,
 		D3D11_SDK_VERSION,
@@ -47,17 +103,19 @@ Graphics::Graphics(HWND hWnd)
 		&pDevice,
 		nullptr,
 		&pContext
-	);
+	));
 
 	// gain access to texture subresource in swap chain (back buffer)
 	ID3D11Resource* pBackBuffer = nullptr;
-	pSwap->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&pBackBuffer));
-	pDevice->CreateRenderTargetView
+	GFX_THROW_IF_FAILED(pSwap->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&pBackBuffer)));
+
+	GFX_THROW_IF_FAILED(pDevice->CreateRenderTargetView
 	(
 		pBackBuffer,
 		nullptr,
 		&pTarget
-	);
+	));
+
 	pBackBuffer->Release();
 }
 
@@ -78,5 +136,22 @@ Graphics::~Graphics()
 
 void Graphics::EndFrame()
 {
-	pSwap->Present(1u, 0u);
+	// for exception throwing, do NOT rename
+	HRESULT hr;
+	if (FAILED(hr = pSwap->Present(1u, 0u)))
+	{
+		if (hr == DXGI_ERROR_DEVICE_REMOVED)
+		{
+			throw GFX_DEVICE_REMOVED_EXCEPT(pDevice->GetDeviceRemovedReason());
+		}
+		else
+		{
+			throw GFX_EXCEPT(hr);
+		}
+	}
+}
+
+const wchar_t* Graphics::DeviceRemovedException::GetType() const noexcept
+{
+	return L"Graphics device removed";
 }

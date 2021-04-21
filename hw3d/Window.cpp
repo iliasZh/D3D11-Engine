@@ -106,6 +106,10 @@ std::optional<int> Window::ProcessMessages()
 
 Graphics& Window::gfx()
 {
+	if (!pGfx)
+	{
+		throw CHWND_NO_GFX_EXCEPT();
+	}
 	return *pGfx;
 }
 
@@ -222,23 +226,23 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 
 
 // window exception stuff
-Window::Exception::Exception(int line, const wchar_t* file, HRESULT hr) noexcept
-	: ChiliException{ line, file }
+Window::HRESULTException::HRESULTException(int line, const wchar_t* file, HRESULT hr) noexcept
+	: Exception{ line, file }
 	, hr{ hr }
 {}
 
-const wchar_t* Window::Exception::What() const noexcept
+const wchar_t* Window::HRESULTException::What() const noexcept
 {
 	std::wstringstream oss;
 	oss << GetType() << std::endl
-		<< L"[Error code]: " << GetErrorCode() << std::endl
+		<< L"[Error code]: " << std::hex << std::showbase << GetErrorCode() << std::endl
 		<< L"[Description]: " << GetErrorString() << std::endl
 		<< GetOriginString();
 	whatBuffer = oss.str();
 	return whatBuffer.c_str();
 }
 
-const wchar_t* Window::Exception::GetType() const noexcept
+const wchar_t* Window::HRESULTException::GetType() const noexcept
 {
 	return L"Chili Window Exception";
 }
@@ -262,12 +266,17 @@ std::wstring Window::Exception::TranslateErrorCode(HRESULT hr) noexcept
 	return errorString;
 }
 
-HRESULT Window::Exception::GetErrorCode() const noexcept
+HRESULT Window::HRESULTException::GetErrorCode() const noexcept
 {
 	return hr;
 }
 
-std::wstring Window::Exception::GetErrorString() const noexcept
+std::wstring Window::HRESULTException::GetErrorString() const noexcept
 {
 	return TranslateErrorCode(hr);
+}
+
+const wchar_t* Window::NoGraphicsException::GetType() const noexcept
+{
+	return L"Chili Window Exception: no graphics";
 }
