@@ -3,10 +3,21 @@
 #pragma comment(lib, "d3d11.lib")
 
 // window exception stuff
-Graphics::Exception::Exception(int line, const wchar_t* file, HRESULT hr) noexcept
+Graphics::Exception::Exception(int line, const wchar_t* file, HRESULT hr, std::vector<std::wstring> info) noexcept
 	: ChiliException{ line, file }
 	, hr{ hr }
-{}
+{
+	for (const auto& s : info)
+	{
+		this->info += s;
+		this->info.push_back('\n');
+		this->info.push_back('\n');
+	}
+	if (!this->info.empty())
+	{
+		info.pop_back();
+	}
+}
 
 const wchar_t* Graphics::Exception::What() const noexcept
 {
@@ -14,6 +25,7 @@ const wchar_t* Graphics::Exception::What() const noexcept
 	oss << GetType() << std::endl
 		<< L"[Error code]: " << std::hex << std::showbase << GetErrorCode() << std::endl
 		<< L"[Description]: " << GetErrorString() << std::endl
+		<< L"[Error Info]: " << GetErrorInfo() << std::endl
 		<< GetOriginString();
 	whatBuffer = oss.str();
 	return whatBuffer.c_str();
@@ -53,6 +65,11 @@ std::wstring Graphics::Exception::GetErrorString() const noexcept
 	return TranslateErrorCode(hr);
 }
 
+std::wstring Graphics::Exception::GetErrorInfo() const noexcept
+{
+	return info;
+}
+
 
 
 Graphics::Graphics(HWND hWnd)
@@ -81,7 +98,7 @@ Graphics::Graphics(HWND hWnd)
 	// 1 frontbuffer, 1 backbuffer
 	sd.BufferCount = 1;
 
-	sd.OutputWindow = /*hWnd*/ (HWND)696969;
+	sd.OutputWindow = hWnd;
 	sd.Windowed = TRUE;
 	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	sd.Flags = 0;
@@ -89,7 +106,7 @@ Graphics::Graphics(HWND hWnd)
 	// for exception throwing, do NOT rename
 	HRESULT hr;
 
-	GFX_THROW_IF_FAILED(D3D11CreateDeviceAndSwapChain
+	GFX_THROW_INFO(D3D11CreateDeviceAndSwapChain
 	(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
@@ -107,9 +124,9 @@ Graphics::Graphics(HWND hWnd)
 
 	// gain access to texture subresource in swap chain (back buffer)
 	ID3D11Resource* pBackBuffer = nullptr;
-	GFX_THROW_IF_FAILED(pSwap->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&pBackBuffer)));
+	GFX_THROW_INFO(pSwap->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&pBackBuffer)));
 
-	GFX_THROW_IF_FAILED(pDevice->CreateRenderTargetView
+	GFX_THROW_INFO(pDevice->CreateRenderTargetView
 	(
 		pBackBuffer,
 		nullptr,

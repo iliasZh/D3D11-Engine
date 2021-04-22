@@ -3,10 +3,9 @@
 #include "Graphics.h"
 #include <dxgidebug.h>
 #include <memory>
+#include "Utilities.h"
 
 #pragma comment(lib, "dxguid.lib")
-
-#define GFX_THROW_IF_NOINFO(hrcall) if (FAILED(hr = (hrcall))) throw Graphics::Exception{ __LINE__, WFILE, hr }
 
 DXGIInfoManager::DXGIInfoManager()
 {
@@ -32,7 +31,7 @@ DXGIInfoManager::DXGIInfoManager()
 	}
 
 	HRESULT hr;
-	GFX_THROW_IF_NOINFO(DXGIGetDebugInterface_(__uuidof(IDXGIInfoQueue), reinterpret_cast<void**>(&pDXGIInfoQueue)));
+	GFX_THROW_NO_INFO(DXGIGetDebugInterface_(__uuidof(IDXGIInfoQueue), reinterpret_cast<void**>(&pDXGIInfoQueue)));
 }
 
 DXGIInfoManager::~DXGIInfoManager()
@@ -50,22 +49,22 @@ void DXGIInfoManager::Set() noexcept
 	next = pDXGIInfoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL);
 }
 
-std::vector<std::string> DXGIInfoManager::GetMessages() const
+std::vector<std::wstring> DXGIInfoManager::GetMessages() const
 {
-	std::vector<std::string> messages;
+	std::vector<std::wstring> messages;
 	const auto end = pDXGIInfoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL);
 	for (auto i = next; i < end; ++i)
 	{
 		HRESULT hr;
 		SIZE_T messageLength;
 		// get the size of ith message in bytes
-		GFX_THROW_IF_NOINFO(pDXGIInfoQueue->GetMessage(DXGI_DEBUG_ALL, i, nullptr, &messageLength));
+		GFX_THROW_NO_INFO(pDXGIInfoQueue->GetMessage(DXGI_DEBUG_ALL, i, nullptr, &messageLength));
 		// allocate memory for message
 		auto bytes = std::make_unique<byte[]>(messageLength);
 		auto pMessage = reinterpret_cast<DXGI_INFO_QUEUE_MESSAGE*>(bytes.get());
 		// get the message and push its description to the vector
-		GFX_THROW_IF_NOINFO(pDXGIInfoQueue->GetMessage(DXGI_DEBUG_ALL, i, pMessage, &messageLength));
-		messages.emplace_back(pMessage->pDescription);
+		GFX_THROW_NO_INFO(pDXGIInfoQueue->GetMessage(DXGI_DEBUG_ALL, i, pMessage, &messageLength));
+		messages.emplace_back(to_ws(pMessage->pDescription));
 	}
 	return messages;
 }
