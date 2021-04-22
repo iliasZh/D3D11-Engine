@@ -106,12 +106,17 @@ Graphics::Graphics(HWND hWnd)
 	// for exception throwing, do NOT rename
 	HRESULT hr;
 
+	UINT swapChainCreateFlags = 0u;
+#ifndef NDEBUG
+	swapChainCreateFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
 	GFX_THROW_INFO(D3D11CreateDeviceAndSwapChain
 	(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
-		D3D11_CREATE_DEVICE_DEBUG,
+		swapChainCreateFlags,
 		nullptr,
 		0,
 		D3D11_SDK_VERSION,
@@ -155,6 +160,11 @@ void Graphics::EndFrame()
 {
 	// for exception throwing, do NOT rename
 	HRESULT hr;
+
+#ifndef NDEBUG
+	INFOMAN_SET;
+#endif
+
 	if (FAILED(hr = pSwap->Present(1u, 0u)))
 	{
 		if (hr == DXGI_ERROR_DEVICE_REMOVED)
