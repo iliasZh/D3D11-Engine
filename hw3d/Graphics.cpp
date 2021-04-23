@@ -72,6 +72,9 @@ std::wstring Graphics::Exception::GetErrorInfo() const noexcept
 
 
 
+
+namespace wrl = Microsoft::WRL;
+
 Graphics::Graphics(HWND hWnd)
 {
 	DXGI_SWAP_CHAIN_DESC sd = {};
@@ -128,32 +131,16 @@ Graphics::Graphics(HWND hWnd)
 	));
 
 	// gain access to texture subresource in swap chain (back buffer)
-	ID3D11Resource* pBackBuffer = nullptr;
-	GFX_THROW_INFO(pSwap->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&pBackBuffer)));
+	wrl::ComPtr<ID3D11Resource> pBackBuffer;
+
+	GFX_THROW_INFO(pSwap->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer));
 
 	GFX_THROW_INFO(pDevice->CreateRenderTargetView
 	(
-		pBackBuffer,
+		pBackBuffer.Get(),
 		nullptr,
 		&pTarget
 	));
-
-	pBackBuffer->Release();
-}
-
-Graphics::~Graphics()
-{
-	if (pContext)
-		pContext->Release();
-	
-	if (pDevice)
-		pDevice->Release();
-
-	if (pSwap)
-		pSwap->Release();
-
-	if (pTarget)
-		pTarget->Release();
 }
 
 void Graphics::EndFrame()
@@ -176,6 +163,12 @@ void Graphics::EndFrame()
 			throw GFX_EXCEPT(hr);
 		}
 	}
+}
+
+void Graphics::ClearBuffer(float r, float g, float b) noexcept
+{
+	const float color[] = { r, g, b, 1.0f };
+	pContext->ClearRenderTargetView(pTarget.Get(), color);
 }
 
 const wchar_t* Graphics::DeviceRemovedException::GetType() const noexcept

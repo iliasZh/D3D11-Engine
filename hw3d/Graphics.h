@@ -5,6 +5,7 @@
 #include <d3d11.h>
 #include "DXGIInfoManager.h"
 #include "GraphicsThrowMacros.h"
+#include <wrl.h>
 
 class Graphics
 {
@@ -31,15 +32,11 @@ public:
 	};
 public:
 	Graphics(HWND hWnd);
+	~Graphics() = default;
 	Graphics(const Graphics&) = delete;
-	~Graphics();
 	Graphics& operator=(const Graphics&) = delete;
 	void EndFrame();
-	void ClearBuffer(float r, float g, float b) noexcept
-	{
-		const float color[] = { r, g, b, 1.0f };
-		pContext->ClearRenderTargetView(pTarget, color);
-	}
+	void ClearBuffer(float r, float g, float b) noexcept;
 #ifndef NDEBUG
 	DXGIInfoManager& GetInfoManager() noexcept
 	{
@@ -50,9 +47,9 @@ private:
 #ifndef NDEBUG
 	DXGIInfoManager infoMan;
 #endif
-	ID3D11Device* pDevice = nullptr;
-	IDXGISwapChain* pSwap = nullptr;
-	ID3D11DeviceContext* pContext = nullptr;
-	ID3D11RenderTargetView* pTarget = nullptr;
+	Microsoft::WRL::ComPtr<ID3D11Device> pDevice;
+	Microsoft::WRL::ComPtr<IDXGISwapChain> pSwap;
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;
 };
 

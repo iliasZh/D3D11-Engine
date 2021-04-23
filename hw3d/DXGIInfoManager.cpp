@@ -1,7 +1,6 @@
 #include "DXGIInfoManager.h"
 #include "Window.h"
 #include "Graphics.h"
-#include <dxgidebug.h>
 #include <memory>
 #include "Utilities.h"
 
@@ -31,15 +30,7 @@ DXGIInfoManager::DXGIInfoManager()
 	}
 
 	HRESULT hr;
-	GFX_THROW_NO_INFO(DXGIGetDebugInterface_(__uuidof(IDXGIInfoQueue), reinterpret_cast<void**>(&pDXGIInfoQueue)));
-}
-
-DXGIInfoManager::~DXGIInfoManager()
-{
-	if (pDXGIInfoQueue)
-	{
-		pDXGIInfoQueue->Release();
-	}
+	GFX_THROW_NO_INFO(DXGIGetDebugInterface_(__uuidof(IDXGIInfoQueue), &pDXGIInfoQueue));
 }
 
 void DXGIInfoManager::Set() noexcept
