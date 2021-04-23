@@ -180,6 +180,7 @@
     <ClInclude Include="Controller.h" />
     <ClInclude Include="DXGIInfoManager.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="GraphicsThrowMacros.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="Resource.h" />
