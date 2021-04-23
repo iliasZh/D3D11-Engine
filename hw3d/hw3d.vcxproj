@@ -186,6 +186,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Utilities.h" />
     <ClInclude Include="Window.h" />
+    <ClInclude Include="WindowThrowMacros.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="hw3d.rc" />
