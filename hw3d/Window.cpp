@@ -226,15 +226,15 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 
 
 // window exception stuff
-Window::HRESULTException::HRESULTException(int line, const wchar_t* file, HRESULT hr) noexcept
+Window::HRException::HRException(int line, const wchar_t* file, HRESULT hr) noexcept
 	: Exception{ line, file }
 	, hr{ hr }
 {}
 
-const wchar_t* Window::HRESULTException::What() const noexcept
+const wchar_t* Window::HRException::What() const noexcept
 {
 	std::wstringstream oss;
-	oss << GetType() << std::endl
+	oss << GetType() << std::endl << std::endl
 		<< L"[Error code]: " << std::hex << std::showbase << GetErrorCode() << std::endl
 		<< L"[Description]: " << GetErrorString() << std::endl
 		<< GetOriginString();
@@ -242,7 +242,7 @@ const wchar_t* Window::HRESULTException::What() const noexcept
 	return whatBuffer.c_str();
 }
 
-const wchar_t* Window::HRESULTException::GetType() const noexcept
+const wchar_t* Window::HRException::GetType() const noexcept
 {
 	return L"Chili Window Exception";
 }
@@ -266,12 +266,12 @@ std::wstring Window::Exception::TranslateErrorCode(HRESULT hr) noexcept
 	return errorString;
 }
 
-HRESULT Window::HRESULTException::GetErrorCode() const noexcept
+HRESULT Window::HRException::GetErrorCode() const noexcept
 {
 	return hr;
 }
 
-std::wstring Window::HRESULTException::GetErrorString() const noexcept
+std::wstring Window::HRException::GetErrorString() const noexcept
 {
 	return TranslateErrorCode(hr);
 }

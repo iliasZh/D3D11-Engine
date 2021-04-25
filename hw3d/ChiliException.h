@@ -13,7 +13,7 @@ public:
 	virtual const wchar_t* What() const noexcept
 	{
 		std::wstringstream oss;
-		oss << GetType() << std::endl
+		oss << GetType() << std::endl << std::endl
 			<< GetOriginString();
 		whatBuffer = oss.str();
 		return whatBuffer.c_str();

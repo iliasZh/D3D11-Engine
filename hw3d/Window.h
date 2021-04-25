@@ -19,10 +19,10 @@ public:
 		using ChiliException::ChiliException;
 		static std::wstring TranslateErrorCode(HRESULT hr) noexcept;
 	};
-	class HRESULTException : public Exception
+	class HRException : public Exception
 	{
 	public:
-		HRESULTException(int line, const wchar_t* file, HRESULT hr) noexcept;
+		HRException(int line, const wchar_t* file, HRESULT hr) noexcept;
 		const wchar_t* What() const noexcept override;
 		const wchar_t* GetType() const noexcept override;
 		HRESULT GetErrorCode() const noexcept;

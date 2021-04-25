@@ -23,7 +23,7 @@ Graphics::InfoException::InfoException(int line, const wchar_t* file, std::vecto
 const wchar_t* Graphics::InfoException::What() const noexcept
 {
 	std::wstringstream oss;
-	oss << GetType() << std::endl
+	oss << GetType() << std::endl << std::endl
 		<< L"[Error Info]: " << GetErrorInfo() << std::endl
 		<< GetOriginString();
 	whatBuffer = oss.str();
@@ -33,7 +33,7 @@ const wchar_t* Graphics::InfoException::What() const noexcept
 const wchar_t* Graphics::HRException::What() const noexcept
 {
 	std::wstringstream oss;
-	oss << GetType() << std::endl
+	oss << GetType() << std::endl << std::endl
 		<< L"[Error code]: " << std::hex << std::showbase << GetErrorCode() << std::endl
 		<< L"[Description]: " << GetErrorString() << std::endl
 		<< L"[Error Info]: " << GetErrorInfo() << std::endl
