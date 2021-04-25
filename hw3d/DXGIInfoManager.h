@@ -6,6 +6,7 @@
 #include <dxgidebug.h>
 #include <wrl.h>
 
+// lots of sweet hanky-panky by Chili to get debug messages from debug window appear in message boxes
 class DXGIInfoManager
 {
 public:

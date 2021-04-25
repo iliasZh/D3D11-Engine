@@ -7,7 +7,7 @@ class App
 {
 public:
 	App();
-	int Go();
+	int Go(); // returns exit code
 private:
 	void DoFrame();
 private:

@@ -2,6 +2,69 @@
 #include <sstream>
 #include "Resource.h"
 
+
+/****************************EXCEPTIONS****************************/
+/****************************EXCEPTIONS****************************/
+
+Window::HRException::HRException(int line, const wchar_t* file, HRESULT hr) noexcept
+	: Exception{ line, file }
+	, hr{ hr }
+{}
+
+const wchar_t* Window::HRException::What() const noexcept
+{
+	std::wstringstream oss;
+	oss << GetType() << std::endl << std::endl
+		<< L"[Error code]: " << std::hex << std::showbase << GetErrorCode() << std::endl
+		<< L"[Description]: " << GetErrorString() << std::endl
+		<< GetOriginString();
+	whatBuffer = oss.str();
+	return whatBuffer.c_str();
+}
+
+const wchar_t* Window::HRException::GetType() const noexcept
+{
+	return L"Chili Window Exception";
+}
+
+std::wstring Window::Exception::TranslateErrorCode(HRESULT hr) noexcept
+{
+	wchar_t* pMsgBuf = nullptr;
+	DWORD nMsgLen = FormatMessage
+	(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		reinterpret_cast<LPWSTR>(&pMsgBuf), 0, nullptr
+	);
+	if (nMsgLen == 0)
+	{
+		return L"Unidentified error code";
+	}
+	std::wstring errorString = pMsgBuf;
+	LocalFree(pMsgBuf);
+	return errorString;
+}
+
+HRESULT Window::HRException::GetErrorCode() const noexcept
+{
+	return hr;
+}
+
+std::wstring Window::HRException::GetErrorString() const noexcept
+{
+	return TranslateErrorCode(hr);
+}
+
+const wchar_t* Window::NoGraphicsException::GetType() const noexcept
+{
+	return L"Chili Window Exception: no graphics";
+}
+
+/****************************END*EXCEPTIONS****************************/
+/****************************END*EXCEPTIONS****************************/
+
+
 Window::WindowClass Window::WindowClass::wndClass;
 
 Window::WindowClass::WindowClass() noexcept
@@ -92,15 +155,17 @@ std::optional<int> Window::ProcessMessages()
 
 	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 	{
+		// when quit message is received, return exit code
 		if (msg.message == WM_QUIT)
 		{
 			return std::optional<int>{ msg.wParam };
 		}
 
 		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+		DispatchMessage(&msg); // dispatch to HandleMsg
 	}
 
+	// if all messages are processed but there wasn't a quit message, return empty optional
 	return std::optional<int>{};
 }
 
@@ -113,6 +178,7 @@ Graphics& Window::gfx()
 	return *pGfx;
 }
 
+// hanky panky windows magic
 LRESULT CALLBACK Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if (msg == WM_NCCREATE)
@@ -134,6 +200,7 @@ LRESULT CALLBACK Window::HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 	return pWnd->HandleMsg(hWnd, msg, wParam, lParam);
 }
 
+// main message handling function
 LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
 	switch (msg)
@@ -146,7 +213,8 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 		kbd.ClearKeyStates();
 		break;
 
-	//***************************KEYBOARD MESSAGES***************************
+	//***************************KEYBOARD*MESSAGES***************************
+	//***************************KEYBOARD*MESSAGES***************************
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
 		// KF_REPEAT's bit is 1 if autorepeat's working (key was down before current msg is sent)
@@ -160,9 +228,12 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 	case WM_CHAR:
 		kbd.OnChar(static_cast<char>(wParam));
 		break;
-	//***********************END KEYBOARD MESSAGES***************************
+	//***********************END*KEYBOARD*MESSAGES***************************
+	//***********************END*KEYBOARD*MESSAGES***************************
 
-	//***************************MOUSE MESSAGES***************************
+
+	//***************************MOUSE*MESSAGES***************************
+	//***************************MOUSE*MESSAGES***************************
 	case WM_MOUSEMOVE:
 		const POINTS p = MAKEPOINTS(lParam);
 		if (p.x >= 0 && p.x < width && p.y >= 0 && p.y < height)
@@ -218,65 +289,8 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 			mouse.OnWheelDown();
 		}
 		break;
-	//***********************END MOUSE MESSAGES***************************
+	//***********************END*MOUSE*MESSAGES***************************
 	}
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
-}
-
-
-// window exception stuff
-Window::HRException::HRException(int line, const wchar_t* file, HRESULT hr) noexcept
-	: Exception{ line, file }
-	, hr{ hr }
-{}
-
-const wchar_t* Window::HRException::What() const noexcept
-{
-	std::wstringstream oss;
-	oss << GetType() << std::endl << std::endl
-		<< L"[Error code]: " << std::hex << std::showbase << GetErrorCode() << std::endl
-		<< L"[Description]: " << GetErrorString() << std::endl
-		<< GetOriginString();
-	whatBuffer = oss.str();
-	return whatBuffer.c_str();
-}
-
-const wchar_t* Window::HRException::GetType() const noexcept
-{
-	return L"Chili Window Exception";
-}
-
-std::wstring Window::Exception::TranslateErrorCode(HRESULT hr) noexcept
-{
-	wchar_t* pMsgBuf = nullptr;
-	DWORD nMsgLen = FormatMessage
-	(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		reinterpret_cast<LPWSTR>(&pMsgBuf), 0, nullptr
-	);
-	if (nMsgLen == 0)
-	{
-		return L"Unidentified error code";
-	}
-	std::wstring errorString = pMsgBuf;
-	LocalFree(pMsgBuf);
-	return errorString;
-}
-
-HRESULT Window::HRException::GetErrorCode() const noexcept
-{
-	return hr;
-}
-
-std::wstring Window::HRException::GetErrorString() const noexcept
-{
-	return TranslateErrorCode(hr);
-}
-
-const wchar_t* Window::NoGraphicsException::GetType() const noexcept
-{
-	return L"Chili Window Exception: no graphics";
 }

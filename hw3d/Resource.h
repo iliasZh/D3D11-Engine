@@ -1,3 +1,5 @@
+// icon related stuff
+
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by hw3d.rc

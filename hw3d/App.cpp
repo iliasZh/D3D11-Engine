@@ -8,11 +8,13 @@ int App::Go()
 {
     while (true)
     {
+        // if optional is not empty, it will evaluate to true
+        // ProcessMsgs returns non-empty optional only when it receives an exit msg
         if (const auto optional = Window::ProcessMessages())
         {
-            return *optional;
+            return *optional;   // return exit code
         }
-        DoFrame();
+        DoFrame();  // draw stuff
     }
 }
 
