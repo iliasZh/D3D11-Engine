@@ -33,7 +33,7 @@ public:
 	std::wstring GetOriginString() const noexcept
 	{
 		std::wstringstream oss;
-		oss << "[File]: " << file << std::endl
+		oss << "[File]: " << file << std::endl << std::endl
 			<< "[Line]: " << line;
 		return oss.str();
 	}
