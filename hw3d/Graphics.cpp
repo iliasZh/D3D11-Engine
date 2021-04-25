@@ -2,10 +2,11 @@
 
 #pragma comment(lib, "d3d11.lib")
 
-// window exception stuff
-Graphics::Exception::Exception(int line, const wchar_t* file, HRESULT hr, std::vector<std::wstring> info) noexcept
-	: ChiliException{ line, file }
-	, hr{ hr }
+/****************************EXCEPTIONS****************************/
+/****************************EXCEPTIONS****************************/
+
+Graphics::InfoException::InfoException(int line, const wchar_t* file, std::vector<std::wstring> info) noexcept
+	: Exception{ line, file }
 {
 	for (const auto& s : info)
 	{
@@ -19,7 +20,17 @@ Graphics::Exception::Exception(int line, const wchar_t* file, HRESULT hr, std::v
 	}
 }
 
-const wchar_t* Graphics::Exception::What() const noexcept
+const wchar_t* Graphics::InfoException::What() const noexcept
+{
+	std::wstringstream oss;
+	oss << GetType() << std::endl
+		<< L"[Error Info]: " << GetErrorInfo() << std::endl
+		<< GetOriginString();
+	whatBuffer = oss.str();
+	return whatBuffer.c_str();
+}
+
+const wchar_t* Graphics::HRException::What() const noexcept
 {
 	std::wstringstream oss;
 	oss << GetType() << std::endl
@@ -31,12 +42,7 @@ const wchar_t* Graphics::Exception::What() const noexcept
 	return whatBuffer.c_str();
 }
 
-const wchar_t* Graphics::Exception::GetType() const noexcept
-{
-	return L"Chili Graphics Exception";
-}
-
-std::wstring Graphics::Exception::TranslateErrorCode(HRESULT hr) noexcept
+std::wstring Graphics::HRException::TranslateErrorCode(HRESULT hr) noexcept
 {
 	wchar_t* pMsgBuf = nullptr;
 	DWORD nMsgLen = FormatMessage
@@ -55,21 +61,8 @@ std::wstring Graphics::Exception::TranslateErrorCode(HRESULT hr) noexcept
 	return errorString;
 }
 
-HRESULT Graphics::Exception::GetErrorCode() const noexcept
-{
-	return hr;
-}
-
-std::wstring Graphics::Exception::GetErrorString() const noexcept
-{
-	return TranslateErrorCode(hr);
-}
-
-std::wstring Graphics::Exception::GetErrorInfo() const noexcept
-{
-	return info;
-}
-
+/****************************END*EXCEPTIONS****************************/
+/****************************END*EXCEPTIONS****************************/
 
 
 
@@ -169,9 +162,4 @@ void Graphics::ClearBuffer(float r, float g, float b) noexcept
 {
 	const float color[] = { r, g, b, 1.0f };
 	pContext->ClearRenderTargetView(pTarget.Get(), color);
-}
-
-const wchar_t* Graphics::DeviceRemovedException::GetType() const noexcept
-{
-	return L"Graphics device removed";
 }

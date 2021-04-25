@@ -18,5 +18,7 @@ int App::Go()
 
 void App::DoFrame()
 {
+    wnd.gfx().ClearBuffer(0.0f, 0.0f, 0.0f);
+    wnd.gfx().DrawTestTriangle();
     wnd.gfx().EndFrame();
 }
