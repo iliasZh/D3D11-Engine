@@ -1,11 +1,14 @@
 #pragma once
 
+#pragma comment(lib, "D3DCompiler.lib")
+
 #include "ChiliWin.h"
 #include "ChiliException.h"
 #include <d3d11.h>
 #include "DXGIInfoManager.h"
 #include "GraphicsThrowMacros.h"
 #include <wrl.h>
+#include <d3dcompiler.h>
 
 class Graphics
 {
@@ -99,9 +102,65 @@ public:
 		// bind vertex buffer to pipeline
 		const UINT stride = sizeof(Vertex);
 		const UINT offset = 0u;
-		pContext->IASetVertexBuffers(0u, 1u, &pVertexBuffer, &stride, &offset);
+		pContext->IASetVertexBuffers(0u, 1u, pVertexBuffer.GetAddressOf(), &stride, &offset);
 
-		GFX_THROW_INFO_ONLY(pContext->Draw(3u, 0u));
+		// create pixel shader
+		wrl::ComPtr<ID3D11PixelShader> pPixelShader;
+		wrl::ComPtr<ID3DBlob> pBlob;
+		GFX_THROW_INFO(D3DReadFileToBlob(L"PixelShader.cso", &pBlob));
+		GFX_THROW_INFO(pDevice->CreatePixelShader
+		(
+			pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pPixelShader
+		));
+
+		// bind pixel shader
+		GFX_THROW_INFO_ONLY(pContext->PSSetShader(pPixelShader.Get(), nullptr, 0u));
+
+		// create vertex shader
+		wrl::ComPtr<ID3D11VertexShader> pVertexShader;
+		GFX_THROW_INFO(D3DReadFileToBlob(L"VertexShader.cso", &pBlob));
+		GFX_THROW_INFO(pDevice->CreateVertexShader
+		(
+			pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pVertexShader
+		));
+
+		// bind vertex shader
+		GFX_THROW_INFO_ONLY(pContext->VSSetShader(pVertexShader.Get(), nullptr, 0u));
+
+		// input (vertex) layout (2d position only)
+		wrl::ComPtr<ID3D11InputLayout> pInputLayout;
+		const D3D11_INPUT_ELEMENT_DESC ied[] =
+		{
+			{ "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
+		};
+		GFX_THROW_INFO(pDevice->CreateInputLayout
+		(
+			ied, (UINT)std::size(ied),
+			pBlob->GetBufferPointer(),
+			pBlob->GetBufferSize(),
+			&pInputLayout
+		));
+
+		// bind input layout
+		pContext->IASetInputLayout(pInputLayout.Get());
+
+		// bind render target
+		GFX_THROW_INFO_ONLY(pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr));
+
+		// set primitive topology
+		GFX_THROW_INFO_ONLY(pContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+
+		// configure viewport
+		D3D11_VIEWPORT vp;
+		vp.Width = 800.0f;
+		vp.Height = 600.0f;
+		vp.TopLeftX = 0.0f;
+		vp.TopLeftY = 0.0f;
+		vp.MinDepth = 0.0f;
+		vp.MaxDepth = 1.0f;
+		GFX_THROW_INFO_ONLY(pContext->RSSetViewports(1u, &vp));
+
+		GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
 	}
 
 #ifndef NDEBUG
