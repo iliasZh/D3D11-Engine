@@ -87,6 +87,8 @@ public:
 	bool IsMiddlePressed() const noexcept;
 	bool IsRightPressed() const noexcept;
 	bool IsInWindow() const noexcept;
+	int GetX() const noexcept { return x; }
+	int GetY() const noexcept { return y; }
 
 	void ClearEventQueue() noexcept;
 private:

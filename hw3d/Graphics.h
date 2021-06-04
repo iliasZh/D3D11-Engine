@@ -9,6 +9,9 @@
 #include "GraphicsThrowMacros.h"
 #include <wrl.h>
 #include <d3dcompiler.h>
+#include "DirectXMath.h"
+
+namespace dx = DirectX;
 
 class Graphics
 {
@@ -65,25 +68,118 @@ public:
 	void EndFrame();
 	void ClearBuffer(float r, float g, float b) noexcept;
 	
-	void DrawTestTriangle()
+	void DrawTestTriangle(float angle, float x, float z)
 	{
+		namespace wrl = Microsoft::WRL;
+		
 		// debug, do not rename
 		HRESULT hr;
 
+		struct ConstantBuffer
+		{
+			dx::XMMATRIX transform;
+		};
+
+		const ConstantBuffer cb =
+		{
+			dx::XMMatrixTranspose
+			(
+				dx::XMMatrixRotationZ(angle) *
+				dx::XMMatrixRotationX(angle) *
+				dx::XMMatrixTranslation(x, 0.0f, z) *
+				dx::XMMatrixPerspectiveLH(1.0f, 3.0f / 4.0f, 0.5f, 10.0f)
+			)
+		};
+
+		wrl::ComPtr<ID3D11Buffer> pConstantBuffer;
+
+		D3D11_BUFFER_DESC cbd = {};
+		cbd.Usage = D3D11_USAGE_DYNAMIC;
+		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		cbd.MiscFlags = 0u;
+		cbd.ByteWidth = sizeof(cb);
+		cbd.StructureByteStride = 0u;
+
+		D3D11_SUBRESOURCE_DATA csd = {};
+		csd.pSysMem = &cb;
+
+		GFX_THROW_INFO(pDevice->CreateBuffer(&cbd, &csd, &pConstantBuffer));
+
+		// bind constant buffer to vertex shader
+		pContext->VSSetConstantBuffers(0u, 1u, pConstantBuffer.GetAddressOf());
+
+		struct ConstantBuffer2
+		{
+			struct
+			{
+				float r;
+				float g;
+				float b;
+				float a;
+			} face_colors[6];
+		};
+		const ConstantBuffer2 cb2 =
+		{
+			{
+				{ 1.0f, 0.0f, 0.0f, 1.0f },
+				{ 0.0f, 1.0f, 0.0f, 1.0f },
+				{ 0.0f, 0.0f, 1.0f, 1.0f },
+				{ 1.0f, 0.0f, 1.0f, 1.0f },
+				{ 1.0f, 1.0f, 0.0f, 1.0f },
+				{ 0.0f, 1.0f, 1.0f, 1.0f }
+			}
+		};
+
+		wrl::ComPtr<ID3D11Buffer> pConstantBuffer2;
+
+		D3D11_BUFFER_DESC cbd2 = {};
+		cbd2.Usage = D3D11_USAGE_DYNAMIC;
+		cbd2.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		cbd2.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		cbd2.MiscFlags = 0u;
+		cbd2.ByteWidth = sizeof(cb2);
+		cbd2.StructureByteStride = 0u;
+
+		D3D11_SUBRESOURCE_DATA csd2 = {};
+		csd2.pSysMem = &cb2;
+
+		GFX_THROW_INFO(pDevice->CreateBuffer(&cbd2, &csd2, &pConstantBuffer2));
+
+		// bind constant buffer to vertex shader
+		pContext->PSSetConstantBuffers(0u, 1u, pConstantBuffer2.GetAddressOf());
+
 		struct Vertex
 		{
-			float x;
-			float y;
+			struct
+			{
+				float x;
+				float y;
+				float z;
+			} pos;
+			struct
+			{
+				unsigned char r;
+				unsigned char g;
+				unsigned char b;
+				unsigned char a;
+			} color;
 		};
 
+
+		float side = 0.5f;
 		const Vertex vertices[] = 
 		{
-			{0.0f, 0.0f}, 
-			{0.0f, 0.5f},
-			{0.5f, 0.0f}
+			{ { -side / 2.0f, +side / 2.0f, +side / 2.0f }, { 255u,   0u,   0u, 0u } },
+			{ { +side / 2.0f, +side / 2.0f, +side / 2.0f }, {   0u, 255u,   0u, 0u } },
+			{ { +side / 2.0f, +side / 2.0f, -side / 2.0f }, {   0u,   0u, 255u, 0u } },
+			{ { -side / 2.0f, +side / 2.0f, -side / 2.0f }, { 255u,   0u, 255u, 0u } },
+			{ { -side / 2.0f, -side / 2.0f, -side / 2.0f }, { 255u, 255u,   0u, 0u } },
+			{ { -side / 2.0f, -side / 2.0f, +side / 2.0f }, {   0u, 255u, 255u, 0u } },
+			{ { +side / 2.0f, -side / 2.0f, +side / 2.0f }, { 255u, 255u, 255u, 0u } },
+			{ { +side / 2.0f, -side / 2.0f, -side / 2.0f }, {   0u,   0u,   0u, 0u } },
 		};
 
-		namespace wrl = Microsoft::WRL;
 		wrl::ComPtr<ID3D11Buffer> pVertexBuffer;
 		
 		D3D11_BUFFER_DESC bd = {};
@@ -98,11 +194,41 @@ public:
 		sd.pSysMem = vertices;
 
 		GFX_THROW_INFO(pDevice->CreateBuffer(&bd, &sd, &pVertexBuffer));
-
+		
 		// bind vertex buffer to pipeline
 		const UINT stride = sizeof(Vertex);
 		const UINT offset = 0u;
 		pContext->IASetVertexBuffers(0u, 1u, pVertexBuffer.GetAddressOf(), &stride, &offset);
+
+		
+		const unsigned int indices[] =
+		{
+			0u,1u,2u, 0u,2u,3u,	//    top face
+			0u,6u,1u, 0u,5u,6u,	//   back face
+			1u,7u,2u, 1u,6u,7u,	//  right face
+			0u,3u,4u, 0u,4u,5u,	//   left face
+			2u,4u,3u, 2u,7u,4u,	//  front face
+			6u,5u,4u, 4u,7u,6u	// bottom face
+		};
+
+		wrl::ComPtr<ID3D11Buffer> pIndexBuffer;
+
+		D3D11_BUFFER_DESC ibd = {};
+		ibd.Usage = D3D11_USAGE_DEFAULT;
+		ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		ibd.CPUAccessFlags = 0u;
+		ibd.MiscFlags = 0u;
+		ibd.ByteWidth = sizeof(indices);
+		ibd.StructureByteStride = sizeof(unsigned int);
+
+		D3D11_SUBRESOURCE_DATA isd = {};
+		isd.pSysMem = indices;
+		GFX_THROW_INFO(pDevice->CreateBuffer(&ibd, &isd, &pIndexBuffer));
+
+		// bind index buffer
+		GFX_THROW_INFO_ONLY(pContext->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0u));
+
+
 
 		// create pixel shader
 		wrl::ComPtr<ID3D11PixelShader> pPixelShader;
@@ -131,8 +257,9 @@ public:
 		wrl::ComPtr<ID3D11InputLayout> pInputLayout;
 		const D3D11_INPUT_ELEMENT_DESC ied[] =
 		{
-			{ "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u }
+			{ "POSITION", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u },
 		};
+
 		GFX_THROW_INFO(pDevice->CreateInputLayout
 		(
 			ied, (UINT)std::size(ied),
@@ -144,11 +271,11 @@ public:
 		// bind input layout
 		pContext->IASetInputLayout(pInputLayout.Get());
 
-		// bind render target
-		GFX_THROW_INFO_ONLY(pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr));
+		//// bind render target
+		//GFX_THROW_INFO_ONLY(pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr));
 
 		// set primitive topology
-		GFX_THROW_INFO_ONLY(pContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+		GFX_THROW_INFO_ONLY(pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
 		// configure viewport
 		D3D11_VIEWPORT vp;
@@ -160,7 +287,8 @@ public:
 		vp.MaxDepth = 1.0f;
 		GFX_THROW_INFO_ONLY(pContext->RSSetViewports(1u, &vp));
 
-		GFX_THROW_INFO_ONLY(pContext->Draw((UINT)std::size(vertices), 0u));
+		// draw
+		GFX_THROW_INFO_ONLY(pContext->DrawIndexed(std::size(indices), 0u, 0u));
 	}
 
 #ifndef NDEBUG
@@ -177,5 +305,6 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain> pSwap;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDepthStencilView;
 };
 

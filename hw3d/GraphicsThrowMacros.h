@@ -1,6 +1,6 @@
 #pragma once
 
-#define GFX_EXCEPT_NO_INFO(hr) Graphics::HRException{__LINE__, WFILE, (hr)}
+#define GFX_EXCEPT_NO_INFO(hr) Graphics::HRException{ __LINE__, WFILE, (hr) }
 #define GFX_THROW_NO_INFO(hrcall) if (FAILED(hr = (hrcall))) throw GFX_EXCEPT_NO_INFO(hr) 
 
 #define INFOMAN_SET Graphics::GetInfoManager().Set()

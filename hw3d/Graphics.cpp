@@ -134,6 +134,40 @@ Graphics::Graphics(HWND hWnd)
 		nullptr,
 		&pTarget
 	));
+
+	// create depth stencil state
+	D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+	dsDesc.DepthEnable = TRUE;
+	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	wrl::ComPtr<ID3D11DepthStencilState> pDepthStencilState;
+	GFX_THROW_INFO(pDevice->CreateDepthStencilState(&dsDesc, &pDepthStencilState));
+
+	// bind depth stencil state
+	pContext->OMSetDepthStencilState(pDepthStencilState.Get(), 1u);
+
+	wrl::ComPtr<ID3D11Texture2D> pDepthStencil;
+	D3D11_TEXTURE2D_DESC depthDesc = {};
+	depthDesc.Width = 800u;
+	depthDesc.Height = 600u;
+	depthDesc.MipLevels = 1u;
+	depthDesc.ArraySize = 1u;
+	depthDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthDesc.SampleDesc.Count = 1u;
+	depthDesc.SampleDesc.Quality = 0u;
+	depthDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	GFX_THROW_INFO(pDevice->CreateTexture2D(&depthDesc, nullptr, &pDepthStencil));
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
+	DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	DSVDesc.Texture2D.MipSlice = 0u;
+	GFX_THROW_INFO(pDevice->CreateDepthStencilView(pDepthStencil.Get(), &DSVDesc, &pDepthStencilView));
+
+	// bind depth stencil view to OM
+	GFX_THROW_INFO_ONLY(pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), pDepthStencilView.Get()));
 }
 
 void Graphics::EndFrame()
@@ -162,4 +196,5 @@ void Graphics::ClearBuffer(float r, float g, float b) noexcept
 {
 	const float color[] = { r, g, b, 1.0f };
 	pContext->ClearRenderTargetView(pTarget.Get(), color);
+	pContext->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 }
