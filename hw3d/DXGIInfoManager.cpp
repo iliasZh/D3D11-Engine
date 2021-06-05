@@ -29,7 +29,6 @@ DXGIInfoManager::DXGIInfoManager()
 		throw CHWND_LAST_EXCEPT();
 	}
 
-	HRESULT hr;
 	GFX_THROW_NO_INFO(DXGIGetDebugInterface_(__uuidof(IDXGIInfoQueue), &pDXGIInfoQueue));
 }
 
@@ -46,7 +45,6 @@ std::vector<std::wstring> DXGIInfoManager::GetMessages() const
 	const auto end = pDXGIInfoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL);
 	for (auto i = next; i < end; ++i)
 	{
-		HRESULT hr;
 		SIZE_T messageLength;
 		// get the size of ith message in bytes
 		GFX_THROW_NO_INFO(pDXGIInfoQueue->GetMessage(DXGI_DEBUG_ALL, i, nullptr, &messageLength));

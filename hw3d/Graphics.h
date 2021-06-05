@@ -16,6 +16,7 @@ namespace dx = DirectX;
 class Graphics
 {
 public:
+	friend class Bindable;
 	/****************************EXCEPTIONS****************************/
 	/****************************EXCEPTIONS****************************/
 	class Exception : public ChiliException
@@ -71,9 +72,6 @@ public:
 	void DrawTestTriangle(float angle, float x, float z)
 	{
 		namespace wrl = Microsoft::WRL;
-		
-		// debug, do not rename
-		HRESULT hr;
 
 		struct ConstantBuffer
 		{
@@ -87,7 +85,7 @@ public:
 				dx::XMMatrixRotationZ(angle) *
 				dx::XMMatrixRotationX(angle) *
 				dx::XMMatrixTranslation(x, 0.0f, z) *
-				dx::XMMatrixPerspectiveLH(1.0f, 3.0f / 4.0f, 0.5f, 10.0f)
+				dx::XMMatrixPerspectiveLH(1.0f, 9.0f / 16.0f, 0.4f, 10.0f)
 			)
 		};
 
@@ -146,7 +144,7 @@ public:
 
 		GFX_THROW_INFO(pDevice->CreateBuffer(&cbd2, &csd2, &pConstantBuffer2));
 
-		// bind constant buffer to vertex shader
+		// bind constant buffer to the pixel shader
 		pContext->PSSetConstantBuffers(0u, 1u, pConstantBuffer2.GetAddressOf());
 
 		struct Vertex
@@ -253,7 +251,7 @@ public:
 		// bind vertex shader
 		GFX_THROW_INFO_ONLY(pContext->VSSetShader(pVertexShader.Get(), nullptr, 0u));
 
-		// input (vertex) layout (2d position only)
+		// input (vertex) layout
 		wrl::ComPtr<ID3D11InputLayout> pInputLayout;
 		const D3D11_INPUT_ELEMENT_DESC ied[] =
 		{
@@ -277,29 +275,20 @@ public:
 		// set primitive topology
 		GFX_THROW_INFO_ONLY(pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-		// configure viewport
-		D3D11_VIEWPORT vp;
-		vp.Width = 800.0f;
-		vp.Height = 600.0f;
-		vp.TopLeftX = 0.0f;
-		vp.TopLeftY = 0.0f;
-		vp.MinDepth = 0.0f;
-		vp.MaxDepth = 1.0f;
-		GFX_THROW_INFO_ONLY(pContext->RSSetViewports(1u, &vp));
 
 		// draw
 		GFX_THROW_INFO_ONLY(pContext->DrawIndexed(std::size(indices), 0u, 0u));
 	}
 
 #ifndef NDEBUG
-	DXGIInfoManager& GetInfoManager() noexcept
+	static DXGIInfoManager& GetInfoManager() noexcept
 	{
 		return infoMan;
 	}
 #endif
 private:
 #ifndef NDEBUG
-	DXGIInfoManager infoMan;
+	inline static DXGIInfoManager infoMan{};
 #endif
 	Microsoft::WRL::ComPtr<ID3D11Device> pDevice;
 	Microsoft::WRL::ComPtr<IDXGISwapChain> pSwap;

@@ -99,9 +99,6 @@ Graphics::Graphics(HWND hWnd)
 	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	sd.Flags = 0;
 
-	// for exception throwing, do NOT rename
-	HRESULT hr;
-
 	UINT swapChainCreateFlags = 0u;
 #ifndef NDEBUG
 	swapChainCreateFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -149,8 +146,8 @@ Graphics::Graphics(HWND hWnd)
 
 	wrl::ComPtr<ID3D11Texture2D> pDepthStencil;
 	D3D11_TEXTURE2D_DESC depthDesc = {};
-	depthDesc.Width = 800u;
-	depthDesc.Height = 600u;
+	depthDesc.Width = 1280u;
+	depthDesc.Height = 720u;
 	depthDesc.MipLevels = 1u;
 	depthDesc.ArraySize = 1u;
 	depthDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -168,6 +165,16 @@ Graphics::Graphics(HWND hWnd)
 
 	// bind depth stencil view to OM
 	GFX_THROW_INFO_ONLY(pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), pDepthStencilView.Get()));
+
+	// configure viewport
+	D3D11_VIEWPORT vp;
+	vp.Width = 1280.0f;
+	vp.Height = 720.0f;
+	vp.TopLeftX = 0.0f;
+	vp.TopLeftY = 0.0f;
+	vp.MinDepth = 0.0f;
+	vp.MaxDepth = 1.0f;
+	GFX_THROW_INFO_ONLY(pContext->RSSetViewports(1u, &vp));
 }
 
 void Graphics::EndFrame()

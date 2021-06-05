@@ -1,7 +1,7 @@
 #include "App.h"
 
 App::App()
-    : wnd{ 800, 600, L"D3D11 Engine" }
+    : wnd{ 1280, 720, L"D3D11 Engine" }
 {}
 
 int App::Go()
@@ -30,8 +30,8 @@ void App::DoFrame()
     wnd.gfx().DrawTestTriangle
     (
         timer.Peek(), 
-        +((float)wnd.mouse.GetX() / 400.f - 1.0f), 
-        -((float)wnd.mouse.GetY() / 300.f - 1.0f) + 1.0f
+        +((float)wnd.mouse.GetX() / 640.0f - 1.0f), 
+        -((float)wnd.mouse.GetY() / 360.0f - 1.0f) + 1.0f
     );
     
     //if (wnd.controller.IsConnected())
